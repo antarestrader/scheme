@@ -22,7 +22,9 @@ atom2 = testParse "Atom" parseAtom "+" $ Atom "+"
 list1 = testParse "List" parseList "(+ 2 2)" $ List [Atom "+", Number 2, Number 2]
 list2 = testParse "List" parseList "(+ 2 (* 5 7))" $ 
   List [Atom "+", Number 2, List [Atom "*", Number 5, Number 7]]
+list3 = testParse "List" parseList "(\n  + 2 2\n)   " $ List [Atom "+", Number 2, Number 2]
+list4 = testParse "Quoted List" parseQuoted "'(+ 2 2)" $ 
+  List[Atom "quote",List [Atom "+", Number 2, Number 2]]
 
-                         
-tests = TestList [test1, num1, num2, atom1, atom2, list1, list2]
+tests = TestList [test1, num1, num2, atom1, atom2, list1, list2, list3, list4]
 

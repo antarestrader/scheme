@@ -77,8 +77,18 @@ parseNumber = do
 parseList :: Parser LispVal
 parseList = liftM List (parens (many parseExpr))
 
+parseQuoted :: Parser LispVal
+parseQuoted = do
+  char '\''
+  x <- parseExpr
+  return $ List [Atom "quote", x]
+
 parseExpr :: Parser LispVal
-parseExpr = parseList <|> lexeme parseAtom <|> lexeme parseString <|> parseNumber
+parseExpr = parseList 
+         <|> lexeme parseAtom 
+         <|> lexeme parseString 
+         <|> parseNumber
+         <|> parseQuoted
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "(expression)" input of
