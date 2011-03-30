@@ -10,6 +10,7 @@ data LispVal = Atom String
              | Real Double
              | String String
              | Bool Bool
+             deriving (Eq)
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
@@ -18,11 +19,16 @@ showVal (Number contents) = show contents
 showVal (Real contents) = show contents
 showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
+showVal (List xs) = "("++ unwords(map showVal xs) ++ ")"
+
+
 
 instance Show LispVal where show = showVal
 
 lexer = P.makeTokenParser haskellDef
 number = P.naturalOrFloat lexer
+parens = P.parens lexer
+lexeme = P.lexeme lexer
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -67,9 +73,12 @@ parseNumber = do
   return $ case n of
     Left val  -> Number val
     Right val -> Real val
+    
+parseList :: Parser LispVal
+parseList = liftM List (parens (many parseExpr))
 
 parseExpr :: Parser LispVal
-parseExpr = parseAtom <|> parseString <|> parseNumber
+parseExpr = parseList <|> lexeme parseAtom <|> lexeme parseString <|> parseNumber
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "(expression)" input of
