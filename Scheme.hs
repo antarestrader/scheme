@@ -1,29 +1,14 @@
 module Scheme where
+
 import Control.Monad
 import Text.ParserCombinators.Parsec hiding (spaces)
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (haskellDef)
 
-data LispVal = Atom String
-             | List [LispVal]
-             | Number Integer
-             | Real Double
-             | String String
-             | Bool Bool
-             deriving (Eq)
+import Scope
+import Value
+import Types
 
-showVal :: LispVal -> String
-showVal (String contents) = "\"" ++ contents ++ "\""
-showVal (Atom name) = name
-showVal (Number contents) = show contents
-showVal (Real contents) = show contents
-showVal (Bool True) = "#t"
-showVal (Bool False) = "#f"
-showVal (List xs) = "("++ unwords(map showVal xs) ++ ")"
-
-
-
-instance Show LispVal where show = showVal
 
 lexer = P.makeTokenParser haskellDef
 number = P.naturalOrFloat lexer
@@ -84,14 +69,30 @@ parseQuoted = do
   return $ List [Atom "quote", x]
 
 parseExpr :: Parser LispVal
-parseExpr = parseList 
-         <|> lexeme parseAtom 
-         <|> lexeme parseString 
+parseExpr = parseList
+         <|> lexeme parseAtom
+         <|> lexeme parseString
          <|> parseNumber
          <|> parseQuoted
+
+eval :: Scope-> LispVal -> Either String (Scope,LispVal)
+eval s val@(String _) = Right (s,val)
+eval s (Atom val) =  case getValue val s of 
+    Nothing -> Left $ "Value not in scope: " ++ val
+    Just x -> Right (s,x)
+eval s val@(Number _) = Right (s,val)
+eval s val@(Bool _) = Right (s,val)
+eval scope (List (Atom f:lvs)) = Left $ "calling function: " ++ f
+
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "(expression)" input of
     Left err -> "No match: " ++ show err
     Right val -> "Found value: " ++ show val
 
+evalExpr :: String -> String
+evalExpr input = case parse parseExpr "(expression)" input of
+    Left err -> "No match: " ++ show err
+    Right val -> case (eval topLevelScope val) of
+        Left  err -> "Error: " ++ err
+        Right val -> show . snd $ val
