@@ -5,9 +5,8 @@ import Text.ParserCombinators.Parsec hiding (spaces)
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (haskellDef)
 
-import Scope
 import Value
-import Types
+import Scope
 
 
 lexer = P.makeTokenParser haskellDef
@@ -75,24 +74,35 @@ parseExpr = parseList
          <|> parseNumber
          <|> parseQuoted
 
-eval :: Scope-> LispVal -> Either String (Scope,LispVal)
+parseProgram :: Parser [LispVal]
+parseProgram = many parseExpr
+
+eval :: LispScope-> LispVal -> Either String (LispScope,LispVal)
 eval s val@(String _) = Right (s,val)
-eval s (Atom val) =  case getValue val s of 
+eval s (Atom val) =  case getValue s val of 
     Nothing -> Left $ "Value not in scope: " ++ val
     Just x -> Right (s,x)
 eval s val@(Number _) = Right (s,val)
 eval s val@(Bool _) = Right (s,val)
-eval scope (List (Atom f:lvs)) = Left $ "calling function: " ++ f
+eval scope (List (fn:lvs)) = case (eval scope fn) of 
+  Right (s,Syntax f) -> f s lvs
+  Right (s,Function f) -> apply s f lvs
+  Right (_, val) -> Left $ (show val) ++ " is not a function"
+  Left err -> Left err
 
+apply :: LispScope ->([LispVal] -> Either String LispVal) -> [LispVal] -> Either String (LispScope,LispVal)
+apply scope f vals = case (f vals) of
+  Right r -> Right (scope,r)
+  Left err -> Left err 
 
 readExpr :: String -> String
-readExpr input = case parse parseExpr "(expression)" input of
+readExpr input = case parse parseProgram "(expression)" input of
     Left err -> "No match: " ++ show err
-    Right val -> "Found value: " ++ show val
+    Right vals ->  unlines (map show vals)
 
 evalExpr :: String -> String
 evalExpr input = case parse parseExpr "(expression)" input of
     Left err -> "No match: " ++ show err
-    Right val -> case (eval topLevelScope val) of
+    Right val -> case (eval topScope val) of
         Left  err -> "Error: " ++ err
         Right val -> show . snd $ val
