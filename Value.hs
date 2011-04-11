@@ -14,8 +14,8 @@ data LispVal = Atom String
              | Real Double
              | String String
              | Bool Bool
-             | Function ([LispVal] -> ThrowsError LispVal)
-             | Syntax (LispScope -> [LispVal] -> ThrowsError (LispScope,LispVal))
+             | Function ([LispVal] -> IOThrowsError LispVal)
+             | Syntax (LispScope -> [LispVal] -> IOThrowsError LispVal)
              
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
