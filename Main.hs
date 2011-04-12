@@ -23,3 +23,5 @@ main = do
   case length args of
         0 -> until_ (== "exit") (readPrompt "Lisp -> ") (repl)
         1 -> repl $ args !! 0
+
+-- (define addtwo (lambda (a b) (+ a b)))

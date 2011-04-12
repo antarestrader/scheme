@@ -16,8 +16,8 @@ eval s val@(Bool _) = return val
 eval scope (List (fn:lvs)) = do
     fun <- eval scope fn
     case fun of 
-      Syntax f -> f scope lvs
-      Function f -> evalMap scope lvs >>= f
+      Syntax f _-> f scope lvs
+      Function f _-> evalMap scope lvs >>= f
       val -> throwError $ (show val) ++ " is not a function"
 eval _ badForm = throwError $ "Unrecognized form: " ++ show badForm
 

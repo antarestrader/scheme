@@ -4,19 +4,29 @@ import Data.IORef
 
 type ScopeImpl a = IORef [(String,IORef a)]
 
-data Scope a = Scope(ScopeImpl a)
+data Scope a = Scope (ScopeImpl a) (Scope a)
+             | Empty
 
 nullScope:: IO(Scope a)
-nullScope = newIORef([]) >>= return . Scope
+nullScope = do
+  ref <- newIORef([]) 
+  return $ Scope ref Empty
 
 buildScope :: [(String,a)] -> IO(Scope a)
 buildScope input = do
   s <- nullScope
-  mapM (\x -> putValue s (fst x) (snd x)) input
+  addToScope s input
+  return s
+  
+deriveScope :: Scope a -> [(String,a)] -> IO(Scope a)
+deriveScope p input = do
+  ref <- newIORef([])
+  s <- return $ Scope ref p
+  addToScope s input
   return s
  
 putValue :: Scope a -> String-> a -> IO()
-putValue (s@(Scope refenv)) var val = do
+putValue (s@(Scope refenv _)) var val = do
   defined <- hasValue s var
   env  <- readIORef refenv
   if (defined)
@@ -26,23 +36,24 @@ putValue (s@(Scope refenv)) var val = do
       writeIORef refenv ((var,val'):env)
 
 getValue ::  Scope a-> String ->  IO(Maybe a)
-getValue (Scope s) val = do
+getValue Empty _ = return Nothing
+getValue (Scope s p) val = do
   env <- readIORef s 
   case (lookup val env) of
-    Nothing -> return Nothing
+    Nothing -> getValue p val
     Just ref -> do
       var <- readIORef ref
       return $ Just var
       
 hasValue :: Scope a -> String -> IO(Bool)
-hasValue (Scope s) val = do
+hasValue (Scope s p) val = do
   env <- readIORef s 
   case (lookup val env) of
     Nothing -> return False
     Just _ -> return True
     
 dumpScope :: Scope a -> IO[(String,a)]
-dumpScope (Scope s) = do
+dumpScope (Scope s p) = do
   env <- readIORef s
   mapM dmp env
   
@@ -53,10 +64,10 @@ dmp (var,refval) = do
   return (var,val)
     
       
-addToScope :: [(String,IORef a)] -> (String, a) -> IO([(String,IORef a)])
-addToScope xs (var,val) = do
-  val' <- newIORef val
-  return ((var,val'):xs)
+addToScope :: Scope a -> [(String, a)] -> IO()
+addToScope s input = do
+  mapM (\x -> putValue s (fst x) (snd x)) input
+  return ()
 
 
 
