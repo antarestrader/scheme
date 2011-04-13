@@ -19,6 +19,7 @@ eval scope (List (fn:lvs)) = do
       Syntax f _-> f scope lvs
       Function f _-> evalMap scope lvs >>= f
       val -> throwError $ (show val) ++ " is not a function"
+eval scope (List []) = return $ List []
 eval _ badForm = throwError $ "Unrecognized form: " ++ show badForm
 
 

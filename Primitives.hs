@@ -47,6 +47,41 @@ quoteSyntax _ _ = throwError "Quote: bad syntax"
 
 quoteVal = (Syntax quoteSyntax $ Left "syntax (quote)")
 
+ifSyntax :: LispScope -> [LispVal] -> IOThrowsError LispVal
+ifSyntax s [pred, consequent, alternate] = do
+  pred' <- eval s pred
+  case pred' of 
+    Bool False -> eval s alternate
+    otherwise -> eval s consequent
+ifSyntax _ _ = throwError "if: Bad Syntax"
+
+ifVal = (Syntax ifSyntax $ Left "syntax (if)")
+
+--Functions----------------------------------
+
+car :: [LispVal] -> IOThrowsError LispVal
+car [List(x : xs)] = return x
+car _ = throwError "car: takes a single list argument"
+
+cdr :: [LispVal] -> IOThrowsError LispVal
+cdr [List(x : xs)] = return $ List xs
+cdr _ = throwError "cdr: takes a single non-empty list argument"
+
+cons :: [LispVal] -> IOThrowsError LispVal
+cons [x1, List []] = return $ List [x1]
+cons [x, List xs] = return $ List $ x : xs
+cons [x,  y] = return $ List $ [x,y] -- should be Dotted List nece that gets to be important
+cons _ = throwError "cons: this form not implimented"
+
+empty :: [LispVal] -> IOThrowsError LispVal
+empty [List []] = return $ Bool True
+empty [String ""] = return $ Bool True
+empty _ = return $ Bool False
+
+puts :: [LispVal] -> IOThrowsError LispVal
+puts lvs = do
+  liftIO $ mapM (putStrLn . show) lvs
+  return $ List []
 
 getNum :: LispVal -> ThrowsError Integer
 getNum (Number x) = return x 
@@ -59,13 +94,31 @@ numFunct f vals = do
   xs <- liftThrows $ mapM getNum vals
   return $ Number $ foldl1 f xs
 
+numBoolFunct :: (Integer -> Integer -> Bool) -> [LispVal] -> IOThrowsError LispVal
+numBoolFunct op [Number l, Number r] = return $ Bool $ l `op` r
+numBoolFunct _ _ = throwError "Bad Boolan Form"
+
 plusVal = Function (numFunct (+)) $ Left "function (+)"
+minusVal = Function (numFunct (-)) $ Left "function (-)"
 multVal = Function (numFunct (*)) $ Left "function (*)"
+gtVal = Function (numBoolFunct (>)) $ Left "function (>)"
+ltVal = Function (numBoolFunct (<)) $ Left "function (<)"
+eqVal = Function (numBoolFunct (==)) $ Left "function (=)"
 
 topScope = buildScope [
     ("define",defineVal)
     , ("lambda",lambdaVal)
     , ("quote",quoteVal)
     , ("+",plusVal)
+    , ("-",minusVal)
     , ("*",multVal)
+    , (">",gtVal)
+    , ("<",ltVal)
+    , ("=",eqVal)
+    , ("if", ifVal)
+    , ("car", Function car $ Left "function (car)")
+    , ("cdr", Function cdr $ Left "function (cdr)")
+    , ("cons", Function cons $ Left "function (cons)")
+    , ("empty?", Function empty $ Left "function (empty?)")
+    , ("puts", Function puts $ Left "function (puts)")
   ]
