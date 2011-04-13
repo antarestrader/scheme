@@ -35,9 +35,16 @@ showVal (List xs) = "("++ unwords(map showVal xs) ++ ")"
 
 instance Show LispVal where show = showVal
 
+display :: LispVal -> String
+display (String contents) = contents
+display l = showVal l
+
+
 showLambda :: Lambda -> String
 showLambda Lambda {params = args, body = body} =
   "(lambda ("++ unwords args ++ ") "++ unwords(map showVal body) ++ " )"
+  
+instance Show Lambda where show = showLambda
 
 analyze :: LispVal -> String
 analyze (String contents) = "String(\"" ++ contents ++ "\")"

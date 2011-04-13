@@ -6,6 +6,7 @@ import Value
 import Scope
 import Error
 import Eval
+import LispIO (ioPrimitives)
 
 saveZipOperands :: [String] -> [LispVal] -> ThrowsError [(String,LispVal)]
 saveZipOperands p o= 
@@ -78,11 +79,6 @@ empty [List []] = return $ Bool True
 empty [String ""] = return $ Bool True
 empty _ = return $ Bool False
 
-puts :: [LispVal] -> IOThrowsError LispVal
-puts lvs = do
-  liftIO $ mapM (putStrLn . show) lvs
-  return $ List []
-
 getNum :: LispVal -> ThrowsError Integer
 getNum (Number x) = return x 
 getNum notNum = throwError "Not a Number"
@@ -105,7 +101,7 @@ gtVal = Function (numBoolFunct (>)) $ Left "function (>)"
 ltVal = Function (numBoolFunct (<)) $ Left "function (<)"
 eqVal = Function (numBoolFunct (==)) $ Left "function (=)"
 
-topScope = buildScope [
+topScope = buildScope $ [
     ("define",defineVal)
     , ("lambda",lambdaVal)
     , ("quote",quoteVal)
@@ -120,5 +116,4 @@ topScope = buildScope [
     , ("cdr", Function cdr $ Left "function (cdr)")
     , ("cons", Function cons $ Left "function (cons)")
     , ("empty?", Function empty $ Left "function (empty?)")
-    , ("puts", Function puts $ Left "function (puts)")
-  ]
+  ] ++ ioPrimitives

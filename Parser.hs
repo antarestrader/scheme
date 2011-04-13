@@ -1,11 +1,13 @@
 module Parser where
 
 import Control.Monad
+import Control.Monad.Error
 import Text.ParserCombinators.Parsec hiding (spaces)
 import qualified Text.ParserCombinators.Parsec.Token as P
 import Text.ParserCombinators.Parsec.Language (haskellDef)
 
 import Value
+import Error
 
 lexer = P.makeTokenParser haskellDef
 number = P.naturalOrFloat lexer
@@ -74,3 +76,8 @@ parseExpr = parseList
 
 parseProgram :: Parser [LispVal]
 parseProgram = many parseExpr
+
+readLisp :: String -> ThrowsError [LispVal]
+readLisp input = case parse parseProgram "(expression)" input of
+  Left err -> throwError $ "Parse Error:\n" ++ show err
+  Right vals -> return vals

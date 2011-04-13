@@ -5,6 +5,7 @@ import Control.Monad.Error
 import Value
 import Scope
 import Error
+import Parser (readLisp)
 
 
 eval :: LispScope-> LispVal -> IOThrowsError LispVal
@@ -30,3 +31,8 @@ evalLast :: LispScope -> [LispVal] -> IOThrowsError LispVal
 evalLast s [] = throwError "No Input Found"
 evalLast s [v] = eval s v
 evalLast s (v:vs) = eval s v >> evalLast s vs
+
+evalLisp :: LispScope -> String -> IOThrowsError LispVal
+evalLisp s input = do
+  lvs <- (liftThrows $ readLisp input) 
+  (evalLast s lvs)

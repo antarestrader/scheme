@@ -19,9 +19,5 @@ until_ pred prompt action = do
 main :: IO ()
 main = do 
   args <- getArgs
-  repl <- buildREPL
-  case length args of
-        0 -> until_ (== "exit") (readPrompt "Lisp -> ") (repl)
-        1 -> repl $ args !! 0
-
--- (define addtwo (lambda (a b) (+ a b)))
+  repl <- buildREPL args
+  until_ (== "exit") (readPrompt "Lisp -> ") (repl)
