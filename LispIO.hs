@@ -14,12 +14,15 @@ puts lvs = do
   return $ List []
   
 load :: LispScope -> [LispVal] -> IOThrowsError LispVal
+load _ [] = throwError "No files to load"
 load s lvs = do
   lvs' <- evalMap s lvs
   liftM last $ mapM (load' s) lvs'
 
 load' :: LispScope -> LispVal -> IOThrowsError LispVal
 load' s (String filename) = (liftIO $ readFile filename) >>= evalLisp s
+
+
 
 ioPrimitives = [
     ("puts", Function puts $ Left "IO (puts)")

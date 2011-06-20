@@ -27,7 +27,7 @@ extractParam _ = throwError "Params list must contain only atoms"
 
 defineSyntax :: LispScope -> [LispVal] -> IOThrowsError LispVal
 defineSyntax scope ((Atom lable):values) = do
-    value <- evalMap scope values >>= return . last
+    value <- evalLast scope values
     liftIO $ putValue scope lable value 
     return value
 defineSyntax _ _ = throwError "Define: Syntax error - wrong format"
@@ -94,12 +94,39 @@ numBoolFunct :: (Integer -> Integer -> Bool) -> [LispVal] -> IOThrowsError LispV
 numBoolFunct op [Number l, Number r] = return $ Bool $ l `op` r
 numBoolFunct _ _ = throwError "Bad Boolan Form"
 
+atomPredFunct :: [LispVal] -> IOThrowsError LispVal
+atomPredFunct [(Atom _)] = return $ Bool True
+atomPredFunct [_] = return $ Bool False
+atomPredFunct _ = throwError "Bad Predicate Form"
+
+stringPredFunct :: [LispVal] -> IOThrowsError LispVal
+stringPredFunct [(String _)] = return $ Bool True
+stringPredFunct [_] = return $ Bool False
+stringPredFunct _ = throwError "Bad Predicate Form"
+
+boolPredFunct :: [LispVal] -> IOThrowsError LispVal
+boolPredFunct [(Bool _)] = return $ Bool True
+boolPredFunct [_] = return $ Bool False
+boolPredFunct _ = throwError "Bad Predicate Form"
+
+numberPredFunct :: [LispVal] -> IOThrowsError LispVal
+numberPredFunct [(Number _)] = return $ Bool True
+numberPredFunct [(Real _)] = return $ Bool True
+numberPredFunct [_] = return $ Bool False
+numberPredFunct _ = throwError "Bad Predicate Form"
+
+listPredFunct :: [LispVal] -> IOThrowsError LispVal
+listPredFunct [(List _)] = return $ Bool True
+listPredFunct [_] = return $ Bool False
+listPredFunct _ = throwError "Bad Predicate Form"
+
 plusVal = Function (numFunct (+)) $ Left "function (+)"
 minusVal = Function (numFunct (-)) $ Left "function (-)"
 multVal = Function (numFunct (*)) $ Left "function (*)"
 gtVal = Function (numBoolFunct (>)) $ Left "function (>)"
 ltVal = Function (numBoolFunct (<)) $ Left "function (<)"
 eqVal = Function (numBoolFunct (==)) $ Left "function (=)"
+
 
 topScope = buildScope $ [
     ("define",defineVal)
@@ -111,7 +138,13 @@ topScope = buildScope $ [
     , (">",gtVal)
     , ("<",ltVal)
     , ("=",eqVal)
+    , ("_",Bool False)
     , ("if", ifVal)
+    , ("atom?", Function atomPredFunct $ Left "function (atom?)")
+    , ("number?", Function numberPredFunct $ Left "function (number?)")
+    , ("bool?", Function boolPredFunct $ Left "function (bool?)")
+    , ("string?", Function stringPredFunct $ Left "function (bool?)")
+    , ("list?", Function listPredFunct $ Left "function (list?)")
     , ("car", Function car $ Left "function (car)")
     , ("cdr", Function cdr $ Left "function (cdr)")
     , ("cons", Function cons $ Left "function (cons)")

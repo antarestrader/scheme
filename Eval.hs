@@ -17,6 +17,7 @@ eval s val@(String _) = return val
 eval s (Atom val) =  do
   (liftIO $ getValue s val) >>= maybe (throwError $ "Value not in scope: " ++ val) (return)
 eval s val@(Number _) = return val
+eval s val@(Real _) = return val
 eval s val@(Bool _) = return val
 eval scope (List (fn:lvs)) = do
     fun <- eval scope fn
@@ -27,10 +28,14 @@ eval scope (List (fn:lvs)) = do
 eval scope (List []) = return $ List []
 eval _ badForm = throwError $ "Unrecognized form: " ++ show badForm
 
-
+-- Takes a scope an a list of lispVals.  Evaluates each
+-- LispVal and returns a list of the results.
 evalMap :: LispScope -> [LispVal] -> IOThrowsError [LispVal]
 evalMap s = mapM (eval s) 
 
+-- Takes a scope and a list of LispVals.  Evaluates each
+-- LispVal in order returning the result of only the final
+-- evaluation.
 evalLast :: LispScope -> [LispVal] -> IOThrowsError LispVal
 evalLast s [] = throwError "No Input Found"
 evalLast s [v] = eval s v

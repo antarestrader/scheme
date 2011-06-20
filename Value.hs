@@ -1,6 +1,7 @@
 module Value where
 
 import IO
+import Text.Printf
 import Control.Monad
 import Control.Monad.Error
 
@@ -30,7 +31,7 @@ showVal (Bool True) = "#t"
 showVal (Bool False) = "#f"
 showVal (Function _ l) = either id showLambda l
 showVal (Syntax _ l) = either id showLambda l
-showVal (Port _ ) = "<Port>"
+showVal (Port h ) = printf "<Port %s>" $ show h
 showVal (List xs) = "("++ unwords(map showVal xs) ++ ")"
 
 instance Show LispVal where show = showVal

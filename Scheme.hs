@@ -8,11 +8,14 @@ import Parser (parseExpr, parseProgram)
 
 import Value
 import Eval (evalLisp)
+import Scope (putValue)
 import Primitives (topScope)
+
 
 replLisp :: LispScope -> String -> IO String
 replLisp s input = do
   result <- runErrorT (evalLisp s input)
+  putValue s "_" $ either (String) (id) result -- make "_" the value of the prev expr
   return $ either (id) (show) result
 
 evalExpr :: String -> IO String
