@@ -7,7 +7,11 @@ import Scope
 import Error
 import Parser (readLisp)
 
-
+-- The eval function takes a scope and paresed Lisp value and
+-- returns the resulting Lisp Value.
+-- String, Number and Bool return themselves.
+-- An Atom trys to find its self in the scope and retrun that value
+-- A List is evaluated using the normal Lisp rules.
 eval :: LispScope-> LispVal -> IOThrowsError LispVal
 eval s val@(String _) = return val
 eval s (Atom val) =  do
