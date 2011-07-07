@@ -6,7 +6,8 @@ import Value
 import Scope
 import Error
 import Eval
-import LispIO (ioPrimitives)
+import LispIO  (ioPrimitives)
+import Compile (compile)
 
 saveZipOperands :: [String] -> [LispVal] -> ThrowsError [(String,LispVal)]
 saveZipOperands p o= 
@@ -132,6 +133,7 @@ topScope = buildScope $ [
     ("define",defineVal)
     , ("lambda",lambdaVal)
     , ("quote",quoteVal)
+    , ("compile" , Syntax compile $ Left "syntax (compile)")
     , ("+",plusVal)
     , ("-",minusVal)
     , ("*",multVal)

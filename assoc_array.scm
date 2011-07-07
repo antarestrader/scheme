@@ -1,0 +1,16 @@
+(define key (lambda (aa) (car (car aa))))
+(define val (lambda (aa) (car (cdr (car aa)))))
+
+(define getaa (lambda (aa var) 
+  (if (empty? aa) 
+    () 
+    (if (= var (key aa))
+      (val aa)
+      (getaa (cdr aa) var)
+    )
+  )
+))
+
+(define putaa (lambda (aa var val)
+  (cons (cons var val) aa)
+))
